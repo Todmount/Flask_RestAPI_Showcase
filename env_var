@@ -1,0 +1,3 @@
+set PYTHONPATH=%PYTHONPATH%;C:\Users\Todmount\MyDrive\MyLearning\DataRootUniversity\Flask\dru_restapi
+
+set DB_URL=postgresql+psycopg2://test_user:password@localhost:5432/test_db
