@@ -1,9 +1,9 @@
 from datetime import datetime as dt
-
 from core import db
+from models.base import Model
 from models.relations import association
 
-class Actor(db.Model):
+class Actor(Model, db.Model):
     __tablename__ = 'actors'
 
     # id -> integer, primary key
