@@ -7,7 +7,7 @@ from models.relations import association
 class Movie(Model, db.Model):
     __tablename__ = 'movies'
 
-    # id -> integer, primary keyxc
+    # id -> integer, primary key
     id = db.Column(db.Integer, primary_key=True)
     # name -> string, size 50, unique, not nullable
     name =  db.Column(db.String(50), unique=True, nullable=False)

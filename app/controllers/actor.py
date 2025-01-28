@@ -93,7 +93,12 @@ def update_actor():
             data["date_of_birth"] = dt.strptime(data["date_of_birth"], DATE_FORMAT).date()
         except ValueError:
             return make_response(jsonify(error=f"Date must be in {DATE_FORMAT} format"), 400)
-
+    ######
+    # Validate input fields
+    invalid_fields = [field for field in data.keys() if field not in ACTOR_FIELDS + ["id"]]
+    if invalid_fields:
+        return make_response(jsonify(error=f"Invalid fields: {', '.join(invalid_fields)}"), 400)
+    ######
     try:
         # Use the update method from models/base.py
         updated_actor = Actor.update(actor_id, **data)
@@ -141,34 +146,29 @@ def actor_add_relation():
     data = get_request_data()
     ### YOUR CODE HERE ###
 
-    # use this for 200 response code
-    # actor =  # add relation here
-    # rel_actor = {k: v for k, v in actor.__dict__.items() if k in ACTOR_FIELDS}
-    # rel_actor['filmography'] = str(actor.filmography)
-    # return make_response(jsonify(rel_actor), 200)
+    # Validate 'id' and 'movie' in data
+    if "id" not in data or "movie" not in data:
+        return make_response(jsonify(error="Both 'id' (actor) and 'movie' must be specified"), 400)
 
-    # Validate IDs
-    if 'actor_id' not in data or 'movie_id' not in data:
-        return make_response(jsonify(error="Actor ID and Movie ID must be specified"), 400)
     try:
-        actor_id = int(data['actor_id'])
-        movie_id = int(data['movie_id'])
-    except ValueError:
-        return make_response(jsonify(error="IDs must be integers"), 400)
+        actor_id = int(data["id"])
+        movie_data = literal_eval(data["movie"])  # Parse the movie data from a string representation
+    except (ValueError, SyntaxError):
+        return make_response(jsonify(error="'id' must be an integer, and 'movie' must be a valid dictionary"), 400)
 
-    # Find the actor and movie
-    actor = Actor.query.filter_by(id=actor_id).first()
-    movie = Movie.query.filter_by(id=movie_id).first()
-    if not actor or not movie:
-        return make_response(jsonify(error="Actor or Movie with such IDs does not exist"), 400)
-
-    # Add the relation
     try:
-        actor.filmography.append(movie)
-        actor.save()
-        actor_data = {k: v for k, v in actor.__dict__.items() if k in ACTOR_FIELDS}
-        actor_data['filmography'] = str(actor.filmography)
-        return make_response(jsonify(actor_data), 200)
+        # Create or retrieve the movie object
+        movie = Movie.create(**movie_data)
+
+        # Add the relation using Actor.add_relation
+        actor = Actor.add_relation(actor_id, movie)
+        if not actor:
+            return make_response(jsonify(error="Actor with such id does not exist"), 400)
+
+        # Prepare the response
+        rel_actor = {k: v for k, v in actor.__dict__.items() if k in ACTOR_FIELDS}
+        rel_actor['filmography'] = str(actor.filmography)
+        return make_response(jsonify(rel_actor), 200)
     except Exception as e:
         return make_response(jsonify(error=str(e)), 400)
     ### END CODE HERE ###
@@ -181,32 +181,23 @@ def actor_clear_relations():
     data = get_request_data()
     ### YOUR CODE HERE ###
 
-    # use this for 200 response code
-    # actor =  # clear relations here
-    # rel_actor = {k: v for k, v in actor.__dict__.items() if k in ACTOR_FIELDS}
-    # rel_actor['filmography'] = str(actor.filmography)
-    # return make_response(jsonify(rel_actor), 200)
-
-    # Validate ID
-    if 'id' not in data:
-        return make_response(jsonify(error="No ID specified"), 400)
+    # Validate 'id'
+    if "id" not in data:
+        return make_response(jsonify(error="No 'id' specified"), 400)
     try:
-        actor_id = int(data['id'])
+        actor_id = int(data["id"])
     except ValueError:
-        return make_response(jsonify(error="ID must be an integer"), 400)
+        return make_response(jsonify(error="'id' must be an integer"), 400)
 
-    # Find the actor
-    actor = Actor.query.filter_by(id=actor_id).first()
-    if not actor:
-        return make_response(jsonify(error="Actor with such ID does not exist"), 400)
-
-    # Clear relations
     try:
-        actor.filmography = []
-        actor.save()
-        actor_data = {k: v for k, v in actor.__dict__.items() if k in ACTOR_FIELDS}
-        actor_data['filmography'] = str(actor.filmography)
-        return make_response(jsonify(actor_data), 200)
+        # Use clear_relations method from models/base.py
+        actor = Actor.clear_relations(actor_id)
+        if not actor:
+            return make_response(jsonify(error="Actor with such id does not exist"), 400)
+
+        rel_actor = {k: v for k, v in actor.__dict__.items() if k in ACTOR_FIELDS}
+        rel_actor['filmography'] = str(actor.filmography)
+        return make_response(jsonify(rel_actor), 200)
     except Exception as e:
         return make_response(jsonify(error=str(e)), 400)
     ### END CODE HERE ###
