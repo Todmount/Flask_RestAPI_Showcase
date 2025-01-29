@@ -161,9 +161,60 @@ def movie_add_relation():
     """
     Add actor to movie's cast
     """
+    data = get_request_data()
+
+    # Extract IDs from the request data
+    movie_id = data.get('id')
+    actor_id = data.get('relation_id')
+
+    # Validate that both IDs are integers
+    # if not isinstance(movie_id, int) or not isinstance(actor_id, int):
+    #     return make_response(jsonify(error="Both movie ID and actor ID must be integers"), 400)
+
+    try:
+        # Check if the movie exists
+        movie = Movie.query.filter_by(id=movie_id).first()
+        if not movie:
+            return make_response(jsonify(error="Movie not found"), 400)
+
+        # Check if the actor exists
+        actor = Actor.query.filter_by(id=actor_id).first()
+        if not actor:
+            return make_response(jsonify(error="Actor not found"), 400)
+
+        # Add the actor to the movie's cast
+        Movie.add_relation(movie_id, actor_id)
+        return make_response(jsonify(message="Relation added successfully"), 200)
+
+    except Exception as e:
+        # db.session.rollback()
+        return make_response(jsonify(error=f"Error occurred: {str(e)}"), 400)
 
 
 def movie_clear_relations():
     """
     Clear all relations by id
     """
+    data = get_request_data()
+
+    # Extract the movie ID from the request data
+    movie_id = data.get('id')
+
+    # # Validate the movie ID (must be an integer)
+    # if not isinstance(movie_id, int):
+    #     return make_response(jsonify(error="ID must be an integer"), 400)
+
+    try:
+        # Fetch the movie from the database
+        movie = Movie.query.filter_by(id=movie_id).first()
+
+        # Check if the movie exists
+        if movie:
+            # Clear all relations for the movie
+            Movie.clear_relations(movie_id)
+            return make_response(jsonify(message="All relations cleared successfully"), 200)
+        else:
+            return make_response(jsonify(error="Movie not found"), 400)
+    except Exception as e:
+        # db.session.rollback()
+        return make_response(jsonify(error=f"Error occurred: {str(e)}"), 400)
