@@ -145,20 +145,24 @@ def actor_add_relation():
     """
     data = get_request_data()
 
-    actor_id = data.get('id')
-    movie_id = data.get('relation_id')
-
-    # # Explicit type checks for robustness
-    # if not isinstance(actor_id, int) or not isinstance(movie_id, int):
-    #     return make_response(jsonify(error="IDs must be integers"), 400)
+    # Validate IDs
+    try:
+        actor_id = int(data.get('id'))
+        movie_id = int(data.get('relation_id'))
+    except (ValueError, TypeError):
+        return make_response(jsonify(error="ID and relation_id must be integers"), 400)
 
     try:
+        # Query the actor and movie
         actor = Actor.query.filter_by(id=actor_id).first()
         movie = Movie.query.filter_by(id=movie_id).first()
 
         if actor and movie:
-            Actor.add_relation(actor_id, movie)
-            return make_response(jsonify(message="Relation added successfully"), 200)
+            # Add relation using the provided add_relation method
+            actor = Actor.add_relation(actor_id, movie)
+            rel_actor = {k: v for k, v in actor.__dict__.items() if k in ACTOR_FIELDS}
+            rel_actor['filmography'] = str(actor.filmography)
+            return make_response(jsonify(rel_actor), 200)
         elif not actor:
             return make_response(jsonify(error="Actor not found"), 400)
         elif not movie:
@@ -173,12 +177,11 @@ def actor_clear_relations():
     """
     data = get_request_data()
 
-    # Extract the actor ID from the request data
-    actor_id = data.get('id')
-
-    # # Validate the actor ID (must be an integer)
-    # if not isinstance(actor_id, int):
-    #     return make_response(jsonify(error="ID must be an integer"), 400)
+    # Validate IDs
+    try:
+        actor_id = int(data.get('id'))
+    except (ValueError, TypeError):
+        return make_response(jsonify(error="ID must be integer"), 400)
 
     try:
         # Fetch the actor from the database
@@ -187,10 +190,12 @@ def actor_clear_relations():
         # Check if the actor exists
         if actor:
             # Clear all relations for the actor
-            Actor.clear_relations(actor_id)
-            return make_response(jsonify(message="All relations cleared successfully"), 200)
+            actor = Actor.clear_relations(actor_id)
+            # return make_response(jsonify(message="All relations cleared successfully"), 200)
+            rel_actor = {k: v for k, v in actor.__dict__.items() if k in ACTOR_FIELDS}
+            rel_actor['filmography'] = str(actor.filmography)
+            return make_response(jsonify(rel_actor), 200)
         else:
             return make_response(jsonify(error="Actor not found"), 400)
     except Exception as e:
-        # db.session.rollback()
         return make_response(jsonify(error=f"Error occurred: {str(e)}"), 400)

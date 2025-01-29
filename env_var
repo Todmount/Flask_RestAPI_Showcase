@@ -3,3 +3,5 @@ set PYTHONPATH=%PYTHONPATH%;C:\Users\Todmount\MyDrive\MyLearning\DataRootUnivers
 set PYTHONPATH=%PYTHONPATH%;C:\Users\Todmount\MyDrive\MyLearning\DataRootUniversity\Flask\dru_restapi\app
 
 set DB_URL=postgresql+psycopg2://test_user:password@localhost:5432/test_db
+
+docker run --env DB_URL=postgresql+psycopg2://test_user:password@host.docker.internal:5432/test_db -p 8005:8005 todmount/dru_flask_tutorial:test
